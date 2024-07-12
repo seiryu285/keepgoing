@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Publishing House: Book Experience</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Roboto', sans-serif;
+            background-color: #ffffff;
+            color: #333;
+        }
+
+        #header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f8f8f8;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        #header h1 {
+            margin: 0;
+            padding: 0 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        #scene-container {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 120px);
+            z-index: 0;
+        }
+
+        #book-info {
+            position: absolute;
+            left: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 400px;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        #book-info h2 {
+            font-size: 1.8em;
+            margin-bottom: 0.5em;
+            color: #333;
+        }
+
+        #book-info p {
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 1em;
+            color: #666;
+        }
+
+        #buy-button, #see-more-btn {
+            background: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-size: 1em;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+        }
+
+        #buy-button:hover, #see-more-btn:hover {
+            background: #45a049;
+        }
+
+        #footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f8f8f8;
+            padding: 10px 0;
+            text-align: center;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .control-button {
+            position: absolute;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 10;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            color: #333;
+        }
+
+        .control-button:hover {
+            background: #e8e8e8;
+        }
+
+        #home-button { top: 70px; left: 20px; }
+        #theme-toggle { top: 70px; right: 20px; }
+        #lang-toggle { top: 70px; right: 70px; }
+        #prev-book { top: 50%; left: 20px; transform: translateY(-50%); }
+        #next-book { top: 50%; right: 20px; transform: translateY(-50%); }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #333;
+            font-size: 24px;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        #preview-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #preview-content {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            color: #333;
+            font-family: 'Roboto', sans-serif;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+        }
+
+        #close-preview {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        #page-turner {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .page-turn-btn {
+            background: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+        }
+
+        .page-turn-btn:hover {
+            background: #45a049;
+        }
+
+        @media (max-width: 768px) {
+            #book-info {
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 80%;
+                max-width: none;
+            }
+            #header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Our Publishing House</h1>
+    </div>
+    <div id="scene-container"></div>
+    <div id="book-info" aria-live="polite"></div>
+    <button id="buy-button" aria-label="Add to Cart"></button>
+    <button id="home-button" class="control-button" aria-label="Go to Home">🏠</button>
+    <button id="theme-toggle" class="control-button" aria-label="Toggle Theme">🌓</button>
+    <button id="lang-toggle" class="control-button" aria-label="Toggle Language">🌐</button>
+    <button id="prev-book" class="control-button" aria-label="Previous Book">◀</button>
+    <button id="next-book" class="control-button" aria-label="Next Book">▶</button>
+    <div id="loading-screen" aria-live="polite">Loading Books...</div>
+    <div id="scene-description" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    <div id="preview-container">
+        <div id="preview-content">
+            <span id="close-preview">&times;</span>
+            <div id="preview-text"></div>
+            <div id="page-turner">
+                <button class="page-turn-btn" id="prev-page">Previous Page</button>
+                <button class="page-turn-btn" id="next-page">Next Page</button>
+            </div>
+        </div>
+    </div>
+    <div id="footer">
+        <p>&copy; 2024 Our Publishing House. All rights reserved.</p>
+    </div>
+
+    <script>
+        const i18n = {
+            en: {
+                addToCart: 'Add to Cart',
+                pages: 'pages',
+                by: 'By',
+                loading: 'Loading Books...',
+                addedToCart: '{title} has been added to your cart. Price: {price}',
+                seeMore: 'Preview',
+                previewTitle: 'Book Preview',
+                prevPage: 'Previous Page',
+                nextPage: 'Next Page',
+                closePreview: 'Close Preview'
+            },
+            ja: {
+                addToCart: 'カートに追加',
+                pages: 'ページ',
+                by: '著者：',
+                loading: '本を読み込んでいます...',
+                addedToCart: '{title}がカートに追加されました。価格：{price}',
+                seeMore: 'プレビュー',
+                previewTitle: '本のプレビュー',
+                prevPage: '前のページ',
+                nextPage: '次のページ',
+                closePreview: 'プレビューを閉じる'
+            }
+        };
+
+        class Book {
+            constructor(bookData, font) {
+                this.data = bookData;
+                this.mesh = this.createMesh();
+                this.addSpine(font);
+                this.previewPages = this.generatePreviewPages();
+                this.currentPreviewPage = 0;
+            }
+
+            createMesh() {
+                const geometry = new THREE.BoxGeometry(2.5, 3.5, 0.5);
+                const materials = this.createMaterials();
+                const mesh = new THREE.Mesh(geometry, materials);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                return mesh;
+            }
+
+            createMaterials() {
+                const coverMaterial = this.createCoverMaterial();
+                const pageMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xf0f0f0,
+                    side: THREE.DoubleSide
+                });
+                
+                return [
+                    coverMaterial, coverMaterial,
+                    pageMaterial, pageMaterial,
+                    coverMaterial, coverMaterial
+                ];
+            }
+
+            createCoverMaterial() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 1024;
+                canvas.height = 1024;
+                
+                ctx.fillStyle = '#e0e0e0';
+                ctx.fillRect(0, 0, 1024, 1024);
+                
+                ctx.font = 'bold 60px Roboto';
+                ctx.fillStyle = '#333333';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.data.title, 512, 512, 900);
+                
+                ctx.font = '40px Roboto';
+                ctx.fillStyle = '#666666';
+                ctx.fillText(this.data.author, 512, 600, 900);
+
+                const coverTexture = new THREE.CanvasTexture(canvas);
+
+                return new THREE.MeshPhongMaterial({
+                    map: coverTexture,
+                    side: THREE.DoubleSide
+                });
+            }
+
+            addSpine(font) {
+                const spineGeometry = new THREE.BoxGeometry(0.2, 3.5, 0.5);
+                const spineTexture = this.createSpineTexture();
+                const spineMaterial = new THREE.MeshPhongMaterial({
+                    map: spineTexture
+                });
+                const spine = new THREE.Mesh(spineGeometry, spineMaterial);
+                spine.position.x = -1.15;
+                this.mesh.add(spine);
+
+                if (font) {
+                    const titleGeometry = new THREE.TextGeometry(this.data.title, {
+                        font: font,
+                        size: 0.15,
+                        height: 0.02,
+                        curveSegments: 12,
+                        bevelEnabled: false,
+                    });
+                    const titleMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+                    const titleMesh = new THREE.Mesh(titleGeometry, titleMaterial);
+                    titleMesh.position.set(-1.25, 1.5, 0.25);
+                    titleMesh.rotation.y = Math.PI / 2;
+                    titleMesh.rotation.z = -Math.PI / 2;
+                    this.mesh.add(titleMesh);
+                }
+            }
+
+            createSpineTexture() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 128;
+                canvas.height = 1024;
+
+                ctx.fillStyle = '#d0d0d0';
+                ctx.fillRect(0, 0, 128, 1024);
+
+                ctx.save();
+                ctx.translate(64, 512);
+                ctx.rotate(-Math.PI / 2);
+                ctx.font = 'bold 48px Roboto';
+                ctx.fillStyle = '#333333';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.data.title, 0, 0, 900);
+                ctx.restore();
+
+                return new THREE.CanvasTexture(canvas);
+            }
+
+            generatePreviewPages() {
+                const content = this.data.preview || this.data.description;
+                const wordsPerPage = 50;
+                const words = content.split(' ');
+                const pages = [];
+                for (let i = 0; i < words.length; i += wordsPerPage) {
+                    pages.push(words.slice(i, i + wordsPerPage).join(' '));
+                }
+                return pages;
+            }
+        }
+
+        class BookExperience {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.books = [];
+                this.currentBookIndex = 0;
+                this.currentLanguage = 'en';
+                this.isDragging = false;
+                this.previousMousePosition = { x: 0, y: 0 };
+
+                this.init();
+            }
+
+            init() {
+                this.setupRenderer();
+                this.setupLighting();
+                this.setupEventListeners();
+                this.loadBookData();
+            }
+
+            setupRenderer() {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.setClearColor(0xffffff);
+                document.getElementById('scene-container').appendChild(this.renderer.domElement);
+            }
+
+            setupLighting() {
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(5, 5, 5);
+                directionalLight.castShadow = true;
+                this.scene.add(directionalLight);
+            }
+
+            setupEventListeners() {
+                document.addEventListener('mousedown', this.onMouseDown.bind(this));
+                document.addEventListener('mousemove', this.onMouseMove.bind(this));
+                document.addEventListener('mouseup', this.onMouseUp.bind(this));
+                document.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: false });
+                document.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
+                document.addEventListener('touchend', this.onTouchEnd.bind(this));
+                window.addEventListener('resize', this.onWindowResize.bind(this), false);
+                document.getElementById('home-button').addEventListener('click', this.goToHome.bind(this));
+                document.getElementById('theme-toggle').addEventListener('click', this.toggleTheme.bind(this));
+                document.getElementById('lang-toggle').addEventListener('click', this.toggleLanguage.bind(this));
+                document.getElementById('prev-book').addEventListener('click', () => this.changeBook(-1));
+                document.getElementById('next-book').addEventListener('click', () => this.changeBook(1));
+                document.getElementById('buy-button').addEventListener('click', this.addToCart.bind(this));
+                document.getElementById('close-preview').addEventListener('click', this.closePreview.bind(this));
+                document.getElementById('prev-page').addEventListener('click', () => this.changePage(-1));
+                document.getElementById('next-page').addEventListener('click', () => this.changePage(1));
+            }
+
+            loadBookData() {
+                const books = [
+                    {
+                        title: "Quantum Realms",
+                        titleJa: "量子の領域",
+                        author: "Dr. Sophia Chen",
+                        authorJa: "ソフィア・チェン博士",
+                        description: "Dive into the mind-bending world of quantum mechanics! 'Quantum Realms' takes you on an exciting journey through the fabric of reality, exploring how tiny particles behave in ways that defy our everyday logic. Discover how these quantum principles are shaping our understanding of the universe and even influencing cutting-edge technologies.",
+                        descriptionJa: "量子力学の不思議な世界に飛び込みましょう！「量子の領域」は、現実の構造を通じてエキサイティングな旅に連れて行き、小さな粒子が私たちの日常の論理に反する方法で振る舞う様子を探ります。これらの量子原理が宇宙についての理解をどのように形作り、最先端技術にどのような影響を与えているかを発見してください。",
+                        price: "$59.99",
+                        priceJa: "￥6,599",
+                        pages: 480,
+                        preview: "Chapter 1: The Quantum Enigma\n\nImagine a world where objects can be in two places at once, where particles communicate instantly across vast distances, and where the very act of observation changes reality. Welcome to the quantum realm! In this chapter, we'll begin our journey by exploring the fundamental principles of quantum mechanics and how they challenge our everyday understanding of the world..."
+                    },
+                    {
+                        title: "Eco-Innovation: Shaping Tomorrow",
+                        titleJa: "エコイノベーション：明日を形作る",
+                        author: "Emma Rodriguez",
+                        authorJa: "エマ・ロドリゲス",
+                        description: "Ready to be inspired by groundbreaking eco-friendly innovations? 'Eco-Innovation' showcases the exciting technologies and ideas that are paving the way for a sustainable future. From renewable energy breakthroughs to smart cities, discover how innovators are tackling our biggest environmental challenges and creating a greener world for generations to come.",
+                        descriptionJa: "画期的な環境に優しいイノベーションに触発される準備はできていますか？「エコイノベーション」は、持続可能な未来への道を切り開く興味深い技術やアイデアを紹介します。再生可能エネルギーのブレークスルーからスマートシティまで、革新者たちが私たちの最大の環境課題にどのように取り組み、次世代のためのより緑豊かな世界を作り出しているかを発見してください。",
+                        price: "$54.99",
+                        priceJa: "￥6,049",
+                        pages: 420,
+                        preview: "Introduction: The Green Revolution\n\nImagine a city where buildings generate their own power, cars run on sunlight, and waste is transformed into valuable resources. This isn't science fiction—it's the world of eco-innovation! In this book, we'll explore the cutting-edge technologies and visionary ideas that are reshaping our relationship with the planet..."
+                    },
+                    {
+                        title: "The Biotech Century",
+                        titleJa: "バイオテクの世紀",
+                        author: "Dr. James Morton",
+                        authorJa: "ジェームズ・モートン博士",
+                        description: "Embark on a thrilling exploration of the biotech revolution! 'The Biotech Century' reveals how cutting-edge biological research is transforming medicine, agriculture, and even our own bodies. From personalized treatments that target your unique genetic makeup to lab-grown organs and beyond, discover the incredible ways biotechnology is shaping our future.",
+                        descriptionJa: "バイオテクノロジー革命のスリリングな探索に乗り出しましょう！「バイオテクの世紀」は、最先端の生物学研究が医学、農業、そして私たち自身の体をどのように変革しているかを明らかにします。あなたの独自の遺伝子構成をターゲットにしたパーソナライズド治療から、研究室で培養された臓器、そしてそれ以上のものまで、バイオテクノロジーが私たちの未来を形作る驚くべき方法を発見してください。",
+                        price: "$62.99",
+                        priceJa: "￥6,929",
+                        pages: 510,
+                        preview: "Prologue: The Dawn of a New Era\n\nIn a state-of-the-art laboratory, a scientist carefully edits the genes of a living organism, rewriting the code of life itself. Across the hall, a 3D printer whirs to life, creating a perfect replica of a human heart. Welcome to the Biotech Century, where the lines between science fiction and reality are blurring every day..."
+                    }
+                ];
+
+                const fontLoader = new THREE.FontLoader();
+                fontLoader.load('https://threejs.org/examples/fonts/gentilis_regular.typeface.json', 
+                    (font) => {
+                        this.books = books.map(bookData => new Book(bookData, font));
+                        this.displayCurrentBook();
+                        this.animate();
+                        this.updateBookInfo();
+                        document.getElementById('loading-screen').style.display = 'none';
+                    },
+                    (xhr) => {
+                       console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                    },
+                    (error) => {
+                        console.error('An error occurred while loading the font:', error);
+                        this.books = books.map(bookData => new Book(bookData, null));
+                        this.displayCurrentBook();
+                        this.animate();
+                        this.updateBookInfo();
+                        document.getElementById('loading-screen').style.display = 'none';
+                    }
+                );
+            }
+
+            displayCurrentBook() {
+                if (this.currentBook) {
+                    this.scene.remove(this.currentBook.mesh);
+                }
+                this.currentBook = this.books[this.currentBookIndex];
+                this.currentBook.mesh.position.set(0, 0, 0);
+                this.currentBook.mesh.rotation.set(0, 0, 0);
+                this.scene.add(this.currentBook.mesh);
+                this.camera.position.set(0, 0, 5);
+                this.camera.lookAt(this.currentBook.mesh.position);
+                this.updateSceneDescription();
+            }
+
+            animate() {
+                requestAnimationFrame(this.animate.bind(this));
+                TWEEN.update();
+
+                if (this.currentBook) {
+                    this.currentBook.mesh.rotation.y += 0.005;
+                }
+
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            onMouseDown(event) {
+                this.isDragging = true;
+                this.previousMousePosition = {
+                    x: event.clientX,
+                    y: event.clientY
+                };
+            }
+
+            onMouseMove(event) {
+                if (!this.isDragging) return;
+                this.rotateBook(event.clientX, event.clientY);
+            }
+
+            onMouseUp(event) {
+                this.isDragging = false;
+            }
+
+            onTouchStart(event) {
+                event.preventDefault();
+                this.isDragging = true;
+                this.previousMousePosition = {
+                    x: event.touches[0].clientX,
+                    y: event.touches[0].clientY
+                };
+            }
+
+            onTouchMove(event) {
+                event.preventDefault();
+                if (!this.isDragging) return;
+                this.rotateBook(event.touches[0].clientX, event.touches[0].clientY);
+            }
+
+            onTouchEnd(event) {
+                this.isDragging = false;
+            }
+
+            rotateBook(clientX, clientY) {
+                const deltaMove = {
+                    x: clientX - this.previousMousePosition.x,
+                    y: clientY - this.previousMousePosition.y
+                };
+
+                const rotationSpeed = 0.005;
+
+                if (this.currentBook) {
+                    this.currentBook.mesh.rotation.y += deltaMove.x * rotationSpeed;
+                    this.currentBook.mesh.rotation.x += deltaMove.y * rotationSpeed;
+
+                    this.currentBook.mesh.rotation.x = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, this.currentBook.mesh.rotation.x));
+                }
+
+                this.previousMousePosition = {
+                    x: clientX,
+                    y: clientY
+                };
+
+                this.updateBookInfo();
+            }
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            toggleTheme() {
+                document.body.classList.toggle('dark-theme');
+                this.updateBookInfo();
+            }
+
+            toggleLanguage() {
+                this.currentLanguage = this.currentLanguage === 'en' ? 'ja' : 'en';
+                this.updateBookInfo();
+                this.updateButtonLanguage();
+            }
+
+            updateButtonLanguage() {
+                const buyButton = document.getElementById('buy-button');
+                if (buyButton) {
+                    buyButton.textContent = i18n[this.currentLanguage].addToCart;
+                }
+            }
+
+            updateBookInfo() {
+                const bookInfoElement = document.getElementById('book-info');
+                const buyButton = document.getElementById('buy-button');
+                const currentBook = this.currentBook;
+
+                if (!bookInfoElement || !buyButton || !currentBook) return;
+
+                const lang = this.currentLanguage;
+                bookInfoElement.innerHTML = this.sanitizeHTML(`
+                    <h2>${currentBook.data[`title${lang === 'en' ? '' : 'Ja'}`]}</h2>
+                    <p>${i18n[lang].by} ${currentBook.data[`author${lang === 'en' ? '' : 'Ja'}`]}</p>
+                    <p>${currentBook.data[`description${lang === 'en' ? '' : 'Ja'}`]}</p>
+                    <p>${currentBook.data.pages} ${i18n[lang].pages}</p>
+                    <p>${lang === 'en' ? currentBook.data.price : currentBook.data.priceJa}</p>
+                    <button id="see-more-btn">${i18n[lang].seeMore}</button>
+                `);
+                const seeMoreBtn = document.getElementById('see-more-btn');
+                if (seeMoreBtn) {
+                    seeMoreBtn.addEventListener('click', this.showPreview.bind(this));
+                }
+                bookInfoElement.style.opacity = 1;
+                bookInfoElement.style.transform = 'translateY(-50%) scale(1)';
+                buyButton.style.opacity = 1;
+                buyButton.style.transform = 'translateX(-50%) scale(1)';
+
+                this.updateButtonLanguage();
+            }
+
+            changeBook(direction) {
+                this.fadeOutBook(() => {
+                    this.currentBookIndex = (this.currentBookIndex + direction + this.books.length) % this.books.length;
+                    this.displayCurrentBook();
+                    this.fadeInBook();
+                });
+            }
+
+            fadeOutBook(callback) {
+                if (!this.currentBook) {
+                    callback();
+                    return;
+                }
+
+                new TWEEN.Tween(this.currentBook.mesh.scale)
+                    .to({ x: 0.001, y: 0.001, z: 0.001 }, 500)
+                    .easing(TWEEN.Easing.Quadratic.Out)
+                    .onComplete(() => {
+                        callback();
+                    })
+                    .start();
+            }
+
+            fadeInBook() {
+                if (!this.currentBook) return;
+
+                this.currentBook.mesh.scale.set(0.001, 0.001, 0.001);
+                new TWEEN.Tween(this.currentBook.mesh.scale)
+                    .to({ x: 1, y: 1, z: 1 }, 500)
+                    .easing(TWEEN.Easing.Quadratic.Out)
+                    .onComplete(() => {
+                        this.updateBookInfo();
+                    })
+                    .start();
+            }
+
+            addToCart() {
+                if (!this.currentBook) return;
+
+                const currentBook = this.currentBook.data;
+                const price = this.currentLanguage === 'en' ? currentBook.price : currentBook.priceJa;
+                const title = this.currentLanguage === 'en' ? currentBook.title : currentBook.titleJa;
+                const message = i18n[this.currentLanguage].addedToCart
+                    .replace('{title}', title)
+                    .replace('{price}', price);
+                alert(this.sanitizeHTML(message));
+            }
+
+            updateSceneDescription() {
+                if (!this.currentBook) return;
+
+                const description = `Current book: ${this.currentBook.data.title}`;
+                const sceneDescription = document.getElementById('scene-description');
+                if (sceneDescription) {
+                    sceneDescription.textContent = description;
+                }
+            }
+
+            sanitizeHTML(html) {
+                const temp = document.createElement('div');
+                temp.textContent = html;
+                return temp.innerHTML;
+            }
+
+            showPreview() {
+                if (!this.currentBook) return;
+
+                const previewContainer = document.getElementById('preview-container');
+                const previewContent = document.getElementById('preview-text');
+                if (!previewContainer || !previewContent) return;
+
+                const currentBook = this.currentBook;
+                const lang = this.currentLanguage;
+
+                previewContent.innerHTML = this.sanitizeHTML(`
+                    <h2>${i18n[lang].previewTitle}: ${currentBook.data[`title${lang === 'en' ? '' : 'Ja'}`]}</h2>
+                    <p>${currentBook.previewPages[currentBook.currentPreviewPage]}</p>
+                `);
+
+                previewContainer.style.display = 'flex';
+                this.updatePageTurner();
+            }
+
+            closePreview() {
+                const previewContainer = document.getElementById('preview-container');
+                if (previewContainer) {
+                    previewContainer.style.display = 'none';
+                }
+                if (this.currentBook) {
+                    this.currentBook.currentPreviewPage = 0;
+                }
+            }
+
+            changePage(direction) {
+                if (!this.currentBook) return;
+
+                const currentBook = this.currentBook;
+                currentBook.currentPreviewPage = Math.max(0, Math.min(currentBook.currentPreviewPage + direction, currentBook.previewPages.length - 1));
+                this.showPreview();
+            }
+
+            updatePageTurner() {
+                if (!this.currentBook) return;
+
+                const prevPageBtn = document.getElementById('prev-page');
+                const nextPageBtn = document.getElementById('next-page');
+                if (!prevPageBtn || !nextPageBtn) return;
+
+                const currentBook = this.currentBook;
+                prevPageBtn.disabled = currentBook.currentPreviewPage === 0;
+                nextPageBtn.disabled = currentBook.currentPreviewPage === currentBook.previewPages.length - 1;
+            }
+
+            goToHome() {
+                alert('Going to home page. In a real application, this would redirect to the home page or show the home state.');
+            }
+        }
+
+        // Initialize the experience
+        document.addEventListener('DOMContentLoaded', () => {
+            const bookExperience = new BookExperience();
+        });
+    </script>
+</body>
+</html>
