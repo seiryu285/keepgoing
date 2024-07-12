@@ -61,6 +61,11 @@
             background: var(--background-color);
             box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
             overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #book-info.hidden {
+            transform: translateX(100%);
         }
 
         #book-info h2 {
@@ -131,6 +136,7 @@
         #lang-toggle { top: 70px; right: 70px; }
         #prev-book { top: 50%; left: 20px; transform: translateY(-50%); }
         #next-book { top: 50%; right: 20px; transform: translateY(-50%); }
+        #toggle-info { top: 120px; right: 20px; }
 
         #loading-screen {
             position: fixed;
@@ -216,13 +222,17 @@
             }
 
             #scene-container {
-                height: 50%;
+                height: 60%;
             }
 
             #book-info {
                 flex: 1;
                 width: 100%;
                 box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
+            }
+
+            #book-info.hidden {
+                transform: translateY(100%);
             }
 
             .control-button {
@@ -246,6 +256,8 @@
 
             #prev-book { left: 10px; }
             #next-book { right: 10px; }
+
+            #toggle-info { top: auto; bottom: 120px; right: 10px; }
         }
 
         @media (max-width: 480px) {
@@ -289,6 +301,7 @@
     <button id="lang-toggle" class="control-button" aria-label="Toggle Language">🌐</button>
     <button id="prev-book" class="control-button" aria-label="Previous Book">◀</button>
     <button id="next-book" class="control-button" aria-label="Next Book">▶</button>
+    <button id="toggle-info" class="control-button" aria-label="Toggle Book Info">ℹ️</button>
     <div id="loading-screen" aria-live="polite">Loading Books...</div>
     <div id="scene-description" aria-live="polite" aria-atomic="true" class="sr-only"></div>
     <div id="preview-container">
@@ -317,7 +330,8 @@
                 previewTitle: 'Book Preview',
                 prevPage: 'Previous Page',
                 nextPage: 'Next Page',
-                closePreview: 'Close Preview'
+                closePreview: 'Close Preview',
+                toggleInfo: 'Toggle Book Info'
             },
             ja: {
                 addToCart: 'カートに追加',
@@ -329,7 +343,8 @@
                 previewTitle: '本のプレビュー',
                 prevPage: '前のページ',
                 nextPage: '次のページ',
-                closePreview: 'プレビューを閉じる'
+                closePreview: 'プレビューを閉じる',
+                toggleInfo: '本の情報を表示/非表示'
             }
         };
 
@@ -343,7 +358,7 @@
             }
 
             createMesh() {
-                const geometry = new THREE.BoxGeometry(2.5, 3.5, 0.5);
+                const geometry = new THREE.BoxGeometry(3.5, 5, 0.5);
                 const materials = this.createMaterials();
                 const mesh = new THREE.Mesh(geometry, materials);
                 mesh.castShadow = true;
@@ -392,27 +407,26 @@
             }
 
             addSpine(font) {
-                const spineGeometry = new THREE.BoxGeometry(0.2, 3.5, 0.5);
+                const spineGeometry = new THREE.BoxGeometry(0.2, 5, 0.5);
                 const spineTexture = this.createSpineTexture();
                 const spineMaterial = new THREE.MeshPhongMaterial({
                     map: spineTexture
                 });
                 const spine = new THREE.Mesh(spineGeometry, spineMaterial);
-                spine.position.x = -1.15;
+                spine.position.x = -1.65;
                 this.mesh.add(spine);
 
                 if (font) {
                     const titleGeometry = new THREE.TextGeometry(this.data.title, {
                         font: font,
-                        size: 0.15,
+                        size: 0.2,
                         height: 0.02,
                         curveSegments: 12,
                         bevelEnabled: false,
                     });
                     const titleMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
                     const titleMesh = new THREE.Mesh(titleGeometry, titleMaterial);
-                    titleMesh.position.set(-1.25, 1.5, 0.25);
-                  titleMesh.position.set(-1.25, 1.5, 0.25);
+                    titleMesh.position.set(-1.75, 2, 0.25);
                     titleMesh.rotation.y = Math.PI / 2;
                     titleMesh.rotation.z = -Math.PI / 2;
                     this.mesh.add(titleMesh);
@@ -463,6 +477,7 @@
                 this.isDragging = false;
                 this.previousMousePosition = { x: 0, y: 0 };
                 this.isMobile = window.innerWidth <= 768;
+                this.isInfoVisible = true;
 
                 this.init();
             }
@@ -510,6 +525,7 @@
                 document.getElementById('close-preview').addEventListener('click', this.closePreview.bind(this));
                 document.getElementById('prev-page').addEventListener('click', () => this.changePage(-1));
                 document.getElementById('next-page').addEventListener('click', () => this.changePage(1));
+                document.getElementById('toggle-info').addEventListener('click', this.toggleBookInfo.bind(this));
             }
 
             loadBookData() {
@@ -584,7 +600,7 @@
                 this.currentBook.mesh.position.copy(bookPosition);
                 this.currentBook.mesh.rotation.set(0, 0, 0);
                 this.scene.add(this.currentBook.mesh);
-                const cameraPosition = this.isMobile ? new THREE.Vector3(0, 0, 6) : new THREE.Vector3(0, 0, 5);
+                const cameraPosition = this.isMobile ? new THREE.Vector3(0, 0, 8) : new THREE.Vector3(0, 0, 7);
                 this.camera.position.copy(cameraPosition);
                 this.camera.lookAt(this.currentBook.mesh.position);
                 this.updateSceneDescription();
@@ -681,14 +697,13 @@
                 const bookInfoElement = document.getElementById('book-info');
                 const currentBook = this.currentBook;
 
-                if (!bookInfoElement || !currentBook) return;
-
-                const lang = this.currentLanguage;
+                if (!bookInfoElement || !currentBook) return;const lang = this.currentLanguage;
                 bookInfoElement.innerHTML = this.sanitizeHTML(`
                     <h2>${currentBook.data[`title${lang === 'en' ? '' : 'Ja'}`]}</h2>
                     <p>${i18n[lang].by} ${currentBook.data[`author${lang === 'en' ? '' : 'Ja'}`]}</p>
                     <p>${currentBook.data[`description${lang === 'en' ? '' : 'Ja'}`]}</p>
-                    <p>${currentBook.data.pages} ${i18n[lang].pages}</p><p>${lang === 'en' ? currentBook.data.price : currentBook.data.priceJa}</p>
+                    <p>${currentBook.data.pages} ${i18n[lang].pages}</p>
+                    <p>${lang === 'en' ? currentBook.data.price : currentBook.data.priceJa}</p>
                     <button id="buy-button">${i18n[lang].addToCart}</button>
                     <button id="see-more-btn">${i18n[lang].seeMore}</button>
                 `);
@@ -817,6 +832,55 @@
 
             goToHome() {
                 alert('Going to home page. In a real application, this would redirect to the home page or show the home state.');
+            }
+
+            toggleBookInfo() {
+                const bookInfo = document.getElementById('book-info');
+                const toggleInfoBtn = document.getElementById('toggle-info');
+                
+                if (bookInfo) {
+                    this.isInfoVisible = !this.isInfoVisible;
+                    bookInfo.classList.toggle('hidden', !this.isInfoVisible);
+                    
+                    if (toggleInfoBtn) {
+                        toggleInfoBtn.textContent = this.isInfoVisible ? 'ℹ️' : '📖';
+                        toggleInfoBtn.setAttribute('aria-label', this.isInfoVisible ? i18n[this.currentLanguage].toggleInfo : i18n[this.currentLanguage].seeMore);
+                    }
+                    
+                    if (!this.isInfoVisible) {
+                        this.zoomInBook();
+                    } else {
+                        this.resetBookZoom();
+                    }
+                }
+            }
+
+            zoomInBook() {
+                if (this.currentBook) {
+                    new TWEEN.Tween(this.currentBook.mesh.scale)
+                        .to({ x: 1.5, y: 1.5, z: 1.5 }, 500)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .start();
+
+                    new TWEEN.Tween(this.camera.position)
+                        .to({ z: this.isMobile ? 6 : 5 }, 500)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .start();
+                }
+            }
+
+            resetBookZoom() {
+                if (this.currentBook) {
+                    new TWEEN.Tween(this.currentBook.mesh.scale)
+                        .to({ x: 1, y: 1, z: 1 }, 500)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .start();
+
+                    new TWEEN.Tween(this.camera.position)
+                        .to({ z: this.isMobile ? 8 : 7 }, 500)
+                        .easing(TWEEN.Easing.Quadratic.Out)
+                        .start();
+                }
             }
         }
 
